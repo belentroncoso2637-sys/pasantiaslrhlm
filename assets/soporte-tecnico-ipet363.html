@@ -81,11 +81,10 @@ aside {
 }
 
 .logo { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; color: #fff; }
-.logo i {
-  display: grid; place-items: center;
-  width: 34px; height: 34px; padding: 0;
-  border: 1.5px solid #cfd9e8; border-radius: 9px;
-  font-style: normal; font-size: 11px; font-weight: 700;
+.logo img {
+  display: block; flex: none;
+  width: 34px; height: 34px;
+  object-fit: contain;
 }
 .logo b { display: block; font-size: 13px; }
 .logo small { color: #93a3b8; font-size: 11px; }
@@ -338,7 +337,7 @@ body.lo aside, body.lo .mw { display: none; }
 
 .ac { width: min(420px, 100%); padding: 28px; background: var(--card); border: 1px solid var(--bd); border-radius: 12px; }
 .ac .logo { margin-bottom: 20px; color: var(--tx); }
-.ac .logo i { border-color: var(--tx); }
+.ac .logo img { width: 34px; height: 34px; }
 .ac .logo small { color: var(--mu); }
 .ac h1 { font-size: 24px; }
 .ac .mu { margin: 0 0 18px; }
@@ -381,7 +380,7 @@ body.lo aside, body.lo .mw { display: none; }
 <!-- Barra lateral -->
 <aside>
   <div class="logo">
-    <i>363</i>
+    <img src="logo363-Photoroom.png" alt="Logo del IPET N.º 363">
     <span><b>IPET N.º 363</b><small>Soporte técnico</small></span>
   </div>
   <nav>
@@ -1074,7 +1073,7 @@ function mostrarAuth(modo) {
 
   $("#au").innerHTML = `
     <div class="ac">
-      <div class="logo"><i>363</i><span><b>IPET N.º 363</b><small>Soporte técnico</small></span></div>
+      <div class="logo"><img src="logo363-Photoroom.png" alt="Logo del IPET N.º 363"><span><b>IPET N.º 363</b><small>Soporte técnico</small></span></div>
       <h1>${registro ? "Crear cuenta" : "Iniciar sesión"}</h1>
       <p class="mu">${registro ? "Completá tus datos para empezar a usar el sistema." : "Ingresá con tu cuenta para gestionar las solicitudes."}</p>
       <form id="af" novalidate>
