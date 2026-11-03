@@ -1,102 +1,126 @@
+
 <?php
 $titulo = 'Inicio';
 $pagina_actual = 'home';
 require_once 'includes/header.php';
 
-// Contadores por estado
-$estados = $pdo->query('SELECT id_estado, nombre, color FROM estados ORDER BY orden')->fetchAll();
+// Estados disponibles
+$estados = $pdo->query("
+    SELECT id_estado, nombre
+    FROM estado
+    ORDER BY id_estado
+")->fetchAll();
+
+// Contar solicitudes por estado
 $conteos = [];
 foreach ($estados as $e) {
-    $st = $pdo->prepare('SELECT COUNT(*) FROM tickets WHERE id_estado = ?');
+    $st = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM Solicitudes
+        WHERE id_estado = ?
+    ");
     $st->execute([$e['id_estado']]);
     $conteos[$e['id_estado']] = (int)$st->fetchColumn();
 }
-$total = array_sum($conteos) ?: 1;
 
-// Últimos tickets
+$total = array_sum($conteos);
+
+// Últimas solicitudes
 $ultimos = $pdo->query("
-    SELECT t.id_ticket, t.titulo, t.prioridad, t.fecha_creacion,
-           e.nombre AS estado, e.color,
-           u.nombre AS ubicacion,
-           us.nombre AS solicitante
-    FROM tickets t
-    JOIN estados e ON e.id_estado = t.id_estado
-    JOIN ubicaciones u ON u.id_ubicacion = t.id_ubicacion
-    JOIN usuarios us ON us.id_usuario = t.id_usuario
-    ORDER BY t.fecha_creacion DESC
+    SELECT
+        s.id_solicitud,
+        s.descripcion,
+        s.fecha,
+        e.nombre AS estado,
+        p.nombre AS prioridad,
+        u.nombre AS ubicacion,
+        us.nombre AS solicitante,
+        eq.nombre AS equipo
+    FROM Solicitudes s
+    JOIN estado e ON e.id_estado = s.id_estado
+    JOIN Equipos eq ON eq.id_equipo = s.id_equipo
+    JOIN Ubicaciones u ON u.id_ubicacion = eq.id_ubicacion
+    JOIN Usuarios us ON us.id_usuario = s.id_usuario
+    JOIN Prioridad p ON p.id_prioridad = s.id_prioridad
+    ORDER BY s.fecha DESC
     LIMIT 8
 ")->fetchAll();
 ?>
 
 <div class="hd">
-  <div>
-    <p class="k">Panel principal</p>
-    <h1>Inicio</h1>
-    <small class="mu">Resumen del estado de los tickets del colegio</small>
-  </div>
-  <a href="nuevo_ticket.php" class="btn btn-pr">+ Nuevo ticket</a>
+    <div>
+        <p class="k">Panel principal</p>
+        <h1>Inicio</h1>
+        <small class="mu">Resumen de solicitudes del colegio</small>
+    </div>
+    <a href="nuevo_ticket.php" class="btn btn-pr">
+        + Nueva solicitud
+    </a>
 </div>
 
-<!-- Barra de estados -->
 <div class="card">
-  <p class="k">Distribución por estado</p>
-  <div class="sg">
-    <?php foreach ($estados as $e): 
-      $pct = round(($conteos[$e['id_estado']] / $total) * 100);
-      if ($pct < 1 && $conteos[$e['id_estado']] > 0) $pct = 2;
-      if ($pct === 0) continue;
-      $color = $e['color'] ?: '#7d95b0';
+    <p class="k">Distribución por estado</p>
+
+    <?php foreach ($estados as $e):
+        $cantidad = $conteos[$e['id_estado']];
+        $porcentaje = $total > 0
+            ? round(($cantidad / $total) * 100)
+            : 0;
     ?>
-      <span style="width:<?= $pct ?>%; background:<?= htmlspecialchars($color) ?>">
-        <?= $conteos[$e['id_estado']] ?>
-      </span>
+        <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between">
+                <span><?= htmlspecialchars($e['nombre']) ?></span>
+                <strong><?= $cantidad ?> (<?= $porcentaje ?>%)</strong>
+            </div>
+            <div style="height:8px;background:#e5e7eb;border-radius:5px">
+                <div style="height:8px;width:<?= $porcentaje ?>%;background:#527da8;border-radius:5px"></div>
+            </div>
+        </div>
     <?php endforeach; ?>
-  </div>
-  <div class="lgr">
-    <?php foreach ($estados as $e): ?>
-      <span>
-        <i style="background:<?= htmlspecialchars($e['color'] ?: '#7d95b0') ?>"></i>
-        <?= htmlspecialchars($e['nombre']) ?> (<?= $conteos[$e['id_estado']] ?>)
-      </span>
-    <?php endforeach; ?>
-  </div>
+
+    <p class="mu">Total de solicitudes: <?= $total ?></p>
 </div>
 
-<!-- Tarjetas de últimos tickets -->
 <div class="hd2" style="margin-top:28px">
-  <div>
-    <p class="k">Actividad reciente</p>
-    <h2>Últimos tickets</h2>
-  </div>
-  <a href="tickets.php" class="btn btn-sec">Ver todos</a>
+    <div>
+        <p class="k">Actividad reciente</p>
+        <h2>Últimas solicitudes</h2>
+    </div>
+    <a href="tickets.php" class="btn btn-sec">Ver todas</a>
 </div>
 
 <div class="tiles">
-  <?php if (empty($ultimos)): ?>
-    <p class="mu">Todavía no hay tickets cargados.</p>
-  <?php else: foreach ($ultimos as $t): 
-    $clase = match(strtolower($t['estado'])) {
-      'pendiente' => 'pen',
-      'en revisión', 'en revision' => 'rev',
-      'en reparación', 'en reparacion' => 'rep',
-      'solucionado', 'resuelto' => 'sol',
-      default => 'pen'
-    };
-  ?>
-    <a class="tile" href="detalle_ticket.php?id=<?= $t['id_ticket'] ?>">
-      <div class="tt">
-        <h3><?= htmlspecialchars($t['titulo']) ?></h3>
-        <span class="b <?= $clase ?>"><?= htmlspecialchars($t['estado']) ?></span>
-      </div>
-      <div class="meta">
-        <?= htmlspecialchars($t['ubicacion']) ?> · 
-        <span class="b <?= htmlspecialchars($t['prioridad']) ?>"><?= htmlspecialchars($t['prioridad']) ?></span>
-      </div>
-      <div class="meta">
-        <?= date('d/m/Y H:i', strtotime($t['fecha_creacion'])) ?> · <?= htmlspecialchars($t['solicitante']) ?>
-      </div>
-    </a>
-  <?php endforeach; endif; ?>
+    <?php if (empty($ultimos)): ?>
+        <p class="mu">Todavía no hay solicitudes cargadas.</p>
+    <?php else: ?>
+        <?php foreach ($ultimos as $t): ?>
+            <div class="tile">
+                <div class="tt">
+                    <h3>
+                        <?= htmlspecialchars($t['descripcion']) ?>
+                    </h3>
+                    <span class="b">
+                        <?= htmlspecialchars($t['estado']) ?>
+                    </span>
+                </div>
+
+                <div class="meta">
+                    <?= htmlspecialchars($t['equipo']) ?> ·
+                    <?= htmlspecialchars($t['ubicacion']) ?>
+                </div>
+
+                <div class="meta">
+                    <?= htmlspecialchars($t['prioridad']) ?> ·
+                    <?= htmlspecialchars($t['solicitante']) ?>
+                </div>
+
+                <div class="meta">
+                    <?= date('d/m/Y H:i', strtotime($t['fecha'])) ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
+

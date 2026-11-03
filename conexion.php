@@ -3,9 +3,9 @@
  * Conexión a la base de datos - Sistema de Soporte Técnico IPET 363
  */
 $host = 'localhost';
-$dbname = 'soporte_tecnico_colegio';
-$username = 'root';
-$password = '';          // Cambiar si tenés contraseña en phpMyAdmin
+$dbname = 'septimo_relevamiento';
+$username = 'septimo';
+$password = 'septimo363';          // Cambiar si tenés contraseña en phpMyAdmin
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
